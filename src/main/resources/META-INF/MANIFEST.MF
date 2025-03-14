@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: C:\Users\Laura\IdeaProjects\GestaoART\src\main\java\org\exam
+ ple
+
