@@ -2,7 +2,12 @@ package meuapp;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileOutputStream;
 import java.sql.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BancoSQLiteGUI {
     private static final String DB_NAME = "meuBanco.db";
@@ -47,7 +52,8 @@ public class BancoSQLiteGUI {
             try {
                 int idade = Integer.parseInt(fieldIdade.getText());
                 inserirDados(nome, idade);
-                JOptionPane.showMessageDialog(frame, "Dados salvos com sucesso!");
+                exportarParaExcel();
+                JOptionPane.showMessageDialog(frame, "Dados salvos e exportados para Excel!");
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(frame, "Idade deve ser um número válido.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
@@ -73,6 +79,46 @@ public class BancoSQLiteGUI {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Erro ao inserir dados: " + e.getMessage());
+        }
+    }
+
+    private static void exportarParaExcel() {
+        String sql = "SELECT * FROM pessoas";
+        List<String[]> dados = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                dados.add(new String[]{String.valueOf(rs.getInt("id")), rs.getString("nome"), String.valueOf(rs.getInt("idade"))});
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Pessoas");
+            Row headerRow = sheet.createRow(0);
+            String[] colunas = {"ID", "Nome", "Idade"};
+
+            for (int i = 0; i < colunas.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(colunas[i]);
+            }
+
+            int rowNum = 1;
+            for (String[] linha : dados) {
+                Row row = sheet.createRow(rowNum++);
+                for (int i = 0; i < linha.length; i++) {
+                    row.createCell(i).setCellValue(linha[i]);
+                }
+            }
+
+            try (FileOutputStream fileOut = new FileOutputStream("dados.xlsx")) {
+                workbook.write(fileOut);
+            }
+            workbook.close();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro ao exportar para Excel: " + e.getMessage());
         }
     }
 }
